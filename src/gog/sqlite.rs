@@ -94,10 +94,20 @@ pub fn read_all(file: &Path, launcher_executable: &Path) -> Result<Vec<Game>> {
     for game in manifest_games {
         let mut game = game?;
 
+        static QUERY: &str = "
+            SELECT PlayTaskLaunchParameters.executablePath
+            FROM PlayTasks
+            JOIN PlayTaskLaunchParameters ON PlayTasks.id = PlayTaskLaunchParameters.playTaskId
+            WHERE PlayTasks.gameReleaseKey = :gameReleaseKey
+        ";
+
         let path = conn
-            .prepare("SELECT installationPath FROM InstalledBaseProducts WHERE productId = :id")
+            .prepare(QUERY)
             .and_then(|mut statement| {
-                statement.query_row(&[(":id", &game.id)], parse_installed_base_product)
+                statement.query_row(
+                    &[(":gameReleaseKey", &format!("gog_{}", &game.id))],
+                    parse_installed_base_product,
+                )
             })
             .map_err(|error| match error {
                 rusqlite::Error::QueryReturnedNoRows => Error::new(
@@ -269,6 +279,14 @@ fn parse_limited_details(
     ]);
 
     Ok(game)
+}
+
+fn parse_string(row: &Row) -> rusqlite::Result<String> {
+    row.get::<_, String>(0)
+}
+
+fn parse_int(row: &Row) -> rusqlite::Result<i32> {
+    row.get::<_, i32>(0)
 }
 
 fn parse_installed_base_product(row: &Row) -> rusqlite::Result<PathBuf> {
