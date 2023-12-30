@@ -59,7 +59,7 @@ pub fn read(file: &Path, launcher_executable: &Path) -> Result<Game> {
         _type: GameType::EpicGames.to_string(),
         id: manifest.app_name.clone(),
         name: manifest.display_name.clone(),
-        path: Some(PathBuf::from(manifest.install_location)),
+        path: Some(PathBuf::from(manifest.install_location).join(manifest.launch_executable)),
         commands: GameCommands {
             install: None,
             launch: Some(vec![
