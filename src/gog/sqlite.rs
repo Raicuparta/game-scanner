@@ -51,6 +51,10 @@ pub fn read_all(file: &Path, launcher_executable: &Path) -> Result<Vec<Game>> {
         }
     }
 
+    if manifest_ids.is_empty() {
+        return Ok(Vec::default());
+    }
+
     let mut stmt = conn
         .prepare(
             format!(
